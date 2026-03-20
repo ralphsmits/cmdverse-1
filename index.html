@@ -1,441 +1,664 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl-NL">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Submitter</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ploegcommandant Dashboard – VRMWB</title>
+<link href="https://cdn.jsdelivr.net/npm/gridstack@10.0/dist/gridstack.min.css" rel="stylesheet"/>
+<style>
+@font-face{font-family:'Frutiger';src:url('font/Frutiger Light.ttf') format('truetype');font-weight:300;font-style:normal}
+@font-face{font-family:'Frutiger';src:url('font/Frutiger Regular.ttf') format('truetype');font-weight:400;font-style:normal}
+@font-face{font-family:'Frutiger';src:url('font/Frutiger Italic.ttf') format('truetype');font-weight:400;font-style:italic}
+@font-face{font-family:'Frutiger';src:url('font/Frutiger Bold.ttf') format('truetype');font-weight:700;font-style:normal}
+@font-face{font-family:'Frutiger';src:url('font/Frutiger Black.ttf') format('truetype');font-weight:900;font-style:normal}
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: #e2e8f0;
-            background-color: #0f172a;
-            padding: 20px;
-            position: relative;
-            min-height: 100vh;
-        }
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --red:#D2100B;--navy:#17428C;--gold:#CC9933;
+  --card-bg:#FFFFFF;--card-border:#E2E4E9;
+  --card-shadow:0 2px 14px rgba(0,0,0,.10),0 1px 3px rgba(0,0,0,.05);
+  --text:#1A1C22;--text-sub:#6B6F7A;--text-light:#9DA3B0;
+  --divider:#ECEEF3;--input-bg:#F4F5F8;
+  --radius:24px;--topbar-h:52px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Frutiger',sans-serif;background:#0A0C10;color:var(--text);display:flex;flex-direction:column}
 
-        /* Video background */
-        #video-background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: -1;
-            opacity: 0.4;
-        }
+/* BG */
+.bg{
+  position:fixed;inset:0;z-index:0;
+  background:url('img/odjbackdrop.png') center/cover no-repeat;
+  filter:blur(2px);transform:scale(1.04);
+}
 
-        .logo-container {
-            text-align: center;
-            margin-bottom: 30px;
-            padding: 20px;
-        }
+/* TOP BAR */
+.topbar{
+  flex:0 0 var(--topbar-h);background:var(--red);
+  display:flex;align-items:center;padding:0 20px;
+  z-index:100;position:relative;
+  box-shadow:0 2px 14px rgba(0,0,0,.4);
+}
+.tb-logos{position:absolute;left:0;right:0;display:flex;align-items:center;justify-content:center;pointer-events:none;height:var(--topbar-h)}
+.tb-logo-img{height:36px;width:auto;object-fit:contain;display:block;pointer-events:auto}
+.tb-left{display:flex;align-items:center;gap:8px}
+.tb-right{display:flex;align-items:center;gap:8px;margin-left:auto;justify-content:flex-end}
+.tb-btn{
+  border:none;height:32px;padding:0 16px;border-radius:25px;
+  font-family:'Frutiger',sans-serif;font-size:12px;font-weight:900;cursor:pointer;
+  transition:all .15s;white-space:nowrap;letter-spacing:.4px;text-transform:uppercase;
+}
+.tb-btn.gold{background:var(--gold);color:#1A1C22}
+.tb-btn.gold:hover{background:#d9a830}
+.tb-btn.gold.active{background:#fff;color:var(--red)}
+.tb-btn.white{background:#fff;color:var(--red);text-decoration:none;display:inline-flex;align-items:center}
+.tb-btn.white:hover{background:rgba(255,255,255,.85)}
+.tb-layout{font-size:11px;color:rgba(255,255,255,.7);font-weight:700;white-space:nowrap;letter-spacing:.3px;text-transform:uppercase}
+.tb-layout strong{color:#fff;font-weight:900}
 
-        .logo {
-            max-width: 700px;
-            width: 100%;
-            height: auto;
-            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
-        }
+/* Edit strip */
+.estrip{position:fixed;top:var(--topbar-h);left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--navy),var(--gold),var(--navy));
+  background-size:200% 100%;z-index:99;opacity:0;transition:opacity .2s;
+  animation:emove 2s linear infinite}
+body.edit-mode .estrip{opacity:1}
+@keyframes emove{0%{background-position:0 0}100%{background-position:200% 0}}
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background: rgba(15, 23, 42, 0.85);
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            position: relative;
-            z-index: 1;
-        }
+/* CANVAS */
+.canvas{flex:1;position:relative;z-index:5;overflow-y:auto;overflow-x:hidden;min-height:0}
+.canvas::-webkit-scrollbar{width:4px}
+.canvas::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:4px}
 
-        .token-status {
-            background: rgba(21, 128, 61, 0.2);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            text-align: center;
-        }
+/* GRIDSTACK */
+.grid-stack{min-height:100%}
+.grid-stack-item-content{border-radius:var(--radius);overflow:hidden}
+.grid-stack-placeholder>.placeholder-content{
+  background:rgba(23,66,140,.12);
+  border:2px dashed rgba(23,66,140,.45);
+  border-radius:var(--radius);
+}
 
-        .token-status h3 {
-            margin-bottom: 5px;
-            color: #86efac;
-        }
+/* WIDGET */
+.widget{
+  height:100%;
+  background:var(--card-bg);
+  border:1px solid var(--card-border);
+  border-radius:var(--radius);
+  box-shadow:var(--card-shadow);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  animation:win .22s cubic-bezier(.2,.8,.4,1) both;
+}
+@keyframes win{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}
+body.edit-mode .widget{outline:2px solid rgba(23,66,140,.25);outline-offset:1px}
+body.edit-mode .grid-stack-item:hover .widget{outline-color:rgba(23,66,140,.5)}
 
-        .token-status p {
-            font-size: 14px;
-            color: #bbf7d0;
-        }
+/* Widget header */
+.wh{flex:0 0 auto;height:46px;padding:0 10px 0 14px;display:flex;align-items:center;gap:7px;border-bottom:2px solid var(--divider);user-select:none;cursor:default}
+body.edit-mode .wh{cursor:grab}
+body.edit-mode .wh:active{cursor:grabbing}
+.wh-title{flex:1;font-size:14px;font-weight:900;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:uppercase;letter-spacing:.5px}
+.wh-acts{display:flex;gap:1px;flex-shrink:0}
+.wb{width:26px;height:26px;border:none;border-radius:6px;background:transparent;cursor:pointer;font-size:11px;color:var(--text-sub);display:flex;align-items:center;justify-content:center;transition:all .12s}
+.wb:hover{background:var(--input-bg);color:var(--text)}
+.wb.del:hover{background:var(--red);color:#fff}
+.wb svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* Edit/delete only visible in edit mode */
+.wb.edit-btn,.wb.del{display:none}
+body.edit-mode .wb.edit-btn,body.edit-mode .wb.del{display:flex}
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+/* Widget body */
+.wbody{flex:1;overflow-y:auto;overflow-x:hidden;padding:12px 13px}
+.wbody::-webkit-scrollbar{width:3px}
+.wbody::-webkit-scrollbar-thumb{background:var(--divider);border-radius:3px}
 
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #cbd5e1;
-        }
+/* BOTTOM BAR */
+.btmbar{
+  flex:0 0 80px;background:var(--card-bg);border-top:1px solid var(--divider);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 40px;z-index:50;
+  box-shadow:0 -3px 14px rgba(0,0,0,.1);
+  position:relative; /* Nodig voor het perfect centreren van de knop */
+}
+.bb-logo strong{font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text);letter-spacing:.3px}
+.bb-logo span{display:block;font-size:12px;font-weight:400;color:var(--text);text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
 
-        input, textarea, select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #334155;
-            border-radius: 6px;
-            font-size: 14px;
-            background-color: #1e293b;
-            color: #e2e8f0;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
+.bb-add{
+  position:absolute; /* Zorgt dat hij in het absolute midden blijft staan */
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--text);color:var(--card-bg);
+  height:81px;width:200px;
+  border:none;border-radius:28px;
+  font-family:'Frutiger',sans-serif;font-size:36px;font-weight:300;line-height:56px;
+  cursor:pointer;transition:opacity .15s;
+  display:flex;align-items:center;justify-content:center;
+  padding:0; /* Padding weggehaald zodat hij weer netjes zijn originele grootte heeft */
+}
+.bb-add:hover{opacity:.75}
 
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-        }
+.bb-datetime{font-size:18px;font-weight:300;color:var(--text);letter-spacing:.2px;font-variant-numeric:tabular-nums;white-space:nowrap}
 
-        input::placeholder, textarea::placeholder {
-            color: #94a3b8;
-        }
+/* WIDGET CONTENT */
+.acc{border-left:3px solid var(--red);background:var(--input-bg);border-radius:0 8px 8px 0;padding:9px 11px;margin-bottom:8px}
+.acc:last-child{margin-bottom:0}
+.acc.blue{border-left-color:var(--navy)}
+.acc.gold{border-left-color:var(--gold)}
+.acc.green{border-left-color:#16a34a}
+.pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:900;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap}
+.pill.red{background:var(--red);color:#fff}
+.pill.blue{background:var(--navy);color:#fff}
+.pill.green{background:#16a34a;color:#fff}
+.pill.gold{background:var(--gold);color:#1A1C22}
+.pill.grey{background:var(--input-bg);color:var(--text-sub);border:1px solid var(--card-border)}
+.irow{display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:3px}
+.irow-l{display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex:1}
+.irow-r{flex-shrink:0;text-align:right}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}
+.scell{background:var(--input-bg);border-radius:8px;padding:8px 11px}
+.scell .sl{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--text-sub)}
+.scell .sv{font-size:20px;font-weight:900;color:var(--text);margin-top:3px}
+.wtbl{width:100%;border-collapse:collapse;font-size:14px}
+.wtbl th{text-align:left;padding:5px 8px 9px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--text-sub);border-bottom:2px solid var(--divider)}
+.wtbl td{padding:10px 8px;border-bottom:1px solid var(--divider);font-weight:700;vertical-align:middle}
+.wtbl tr:last-child td{border-bottom:none}
+.trow{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--divider)}
+.trow:last-child{border-bottom:none}
+.tcb{width:16px;height:16px;border-radius:4px;border:2px solid var(--card-border);cursor:pointer;flex-shrink:0;margin-top:1.5px;appearance:none;background:var(--card-bg);transition:all .15s}
+.tcb:checked{background:var(--navy);border-color:var(--navy);background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 10 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 4l3 3 5-6' stroke='white' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:9px}
+.tlabel{font-size:14px;font-weight:700;color:var(--text);line-height:1.4;transition:color .15s}
+.tcb:checked~.tc .tlabel{text-decoration:line-through;color:var(--text-sub)}
+.tmeta{font-size:12px;color:var(--text-sub);margin-top:3px;font-weight:700}
+.warnrow{display:flex;align-items:flex-start;gap:5px;font-size:13px;font-weight:700;color:var(--red);margin-top:4px}
+.warnrow::before{content:'▲';font-size:9px;margin-top:2px;flex-shrink:0}
 
-        small {
-            display: block;
-            margin-top: 5px;
-            color: #94a3b8;
-            font-size: 12px;
-        }
+/* MODALS */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.mov.open{opacity:1;pointer-events:all}
+.mbox{background:var(--card-bg);border-radius:16px;padding:26px 26px 22px;width:480px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.4);border:1px solid var(--card-border);animation:min .2s cubic-bezier(.2,.8,.4,1)}
+@keyframes min{from{transform:scale(.9) translateY(10px)}to{transform:none}}
+.mh{font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--text);margin-bottom:18px}
+.flbl{display:block;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--text-sub);margin:13px 0 5px}
+.flbl:first-of-type{margin-top:0}
+.finp,.fta{width:100%;background:var(--input-bg);border:1px solid var(--card-border);border-radius:8px;padding:10px 12px;font-family:'Frutiger',sans-serif;font-size:14px;font-weight:700;color:var(--text);outline:none;transition:border-color .15s}
+.finp:focus,.fta:focus{border-color:var(--navy)}
+.fta{resize:vertical;min-height:100px;line-height:1.55}
+.fhint{font-size:12px;color:var(--text-sub);margin-top:5px;line-height:1.5;font-weight:700}
+.fhint code{font-family:monospace;background:var(--input-bg);padding:1px 5px;border-radius:3px;font-size:11px}
+.macts{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+.bprim{background:var(--navy);color:#fff;border:none;padding:10px 22px;border-radius:25px;font-family:'Frutiger',sans-serif;font-weight:900;font-size:13px;cursor:pointer;transition:background .15s;text-transform:uppercase;letter-spacing:.4px}
+.bprim:hover{background:#1a4fa8}
+.bsec{background:transparent;border:none;color:var(--text-sub);font-size:13px;font-weight:700;cursor:pointer;font-family:'Frutiger',sans-serif;text-decoration:underline}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wpick{background:var(--input-bg);border:1.5px solid var(--card-border);border-radius:10px;padding:13px 10px 11px;text-align:center;cursor:pointer;transition:all .15s;font-family:'Frutiger',sans-serif}
+.wpick:hover{border-color:var(--navy);background:rgba(23,66,140,.04)}
+.wpick.taken{opacity:.3;cursor:not-allowed;pointer-events:none}
+.wpick-ico{width:32px;height:32px;border-radius:7px;background:var(--card-bg);border:1px solid var(--card-border);margin:0 auto 7px;display:flex;align-items:center;justify-content:center}
+.wpick-ico svg{width:15px;height:15px;stroke:var(--navy);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wpick-name{font-size:12px;font-weight:900;color:var(--text);text-transform:uppercase;letter-spacing:.5px}
 
-        button {
-            width: 100%;
-            padding: 14px;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-        }
-
-        button:hover {
-            background: #2563eb;
-            transform: translateY(-1px);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            background: #1e40af;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .message {
-            margin-top: 20px;
-            padding: 12px;
-            border-radius: 6px;
-            display: none;
-        }
-
-        .message.success {
-            background: rgba(21, 128, 61, 0.2);
-            color: #86efac;
-            border: 1px solid rgba(34, 197, 94, 0.3);
-        }
-
-        .message.error {
-            background: rgba(185, 28, 28, 0.2);
-            color: #fca5a5;
-            border: 1px solid rgba(248, 113, 113, 0.3);
-        }
-    </style>
+/* Toast */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);background:#1A1C22;color:#fff;padding:9px 20px;border-radius:20px;font-weight:700;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;transition:all .25s;pointer-events:none;z-index:9999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
 </head>
 <body>
-    <!-- Video Background -->
-    <video id="video-background" autoplay muted loop>
-        <source src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/backdrop.mp4" type="video/mp4">
-        Your browser does not support the video tag.
-    </video>
+<div class="bg"></div>
+<div class="estrip"></div>
 
-    <!-- Logo outside the form container -->
-    <div class="logo-container">
-        <img src="https://raw.githubusercontent.com/ralphsmits/testing3oct/refs/heads/main/cmdverselogo2.png" alt="CMDverse Logo" class="logo">
+<header class="topbar">
+  <div class="tb-left">
+    <a href="https://rvanbroekhoven.github.io/ODj-VRMWB/" target="_blank" class="tb-btn white">ODj Beheer</a>
+  </div>
+  <div class="tb-logos">
+    <img src="img/logo.png" alt="VRMWB Brandweer" class="tb-logo-img">
+  </div>
+  <div class="tb-right">
+    <div class="tb-layout" id="layout-lbl">Layout: <strong>Vergrendeld</strong></div>
+    <button class="tb-btn gold" id="editbtn" onclick="toggleEditMode()">Edit Mode</button>
+  </div>
+</header>
+
+<main class="canvas" id="canvas">
+  <div class="grid-stack" id="grid"></div>
+</main>
+
+<footer class="btmbar">
+  <div class="bb-logo">
+    <strong>Ploegcommandant</strong>
+    <span>Dashboard</span>
+  </div>
+  <button class="bb-add" onclick="openModal('add-modal')">+</button>
+  <div class="bb-datetime" id="bbdatetime">—</div>
+</footer>
+
+<div class="mov" id="add-modal">
+  <div class="mbox">
+    <div class="mh">Widget toevoegen</div>
+    <div class="wgrid" id="wpgrid"></div>
+    <div class="macts"><button class="bsec" onclick="closeModal('add-modal')">Annuleren</button></div>
+  </div>
+</div>
+
+<div class="mov" id="edit-modal">
+  <div class="mbox">
+    <div class="mh" id="emh">Bewerken</div>
+    <div id="embody"></div>
+    <div class="macts">
+      <button class="bsec" onclick="closeModal('edit-modal')">Annuleren</button>
+      <button class="bprim" onclick="saveEdit()">Opslaan</button>
     </div>
+  </div>
+</div>
 
-    <div class="container">
-        <!-- Token Status Section -->
-        <div class="token-status">
-            <h3>GitHub Token Ready</h3>
-            <p>Fine-grained personal access token is configured for testing</p>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.0/dist/gridstack-all.js"></script>
+<script>
+// ── ICONS ──
+const I={
+  pencil:`<svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  x:`<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  list:`<svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>`,
+  cloud:`<svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>`,
+  truck:`<svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>`,
+  cal:`<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  users:`<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  road:`<svg viewBox="0 0 24 24"><path d="M5 22L12 2l7 20"/><line x1="12" y1="17" x2="12" y2="17"/><line x1="10" y1="11" x2="14" y2="11"/></svg>`,
+  ticket:`<svg viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v2z"/></svg>`,
+  bell:`<svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>`,
+};
+
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ── TYPES ──
+const T={
+  werkzaamheden:{label:'Werkzaamheden',ico:'list',
+    def:{items:[
+      {t:'Voertuig T-31 APK keuring',d:false,m:'Vervaldatum: 25 mrt 2026'},
+      {t:'Bluswaterkaart bijwerken – sector Noord',d:false,m:'Prioriteit: Hoog'},
+      {t:'Jaarlijkse ademlucht controle SCBAs',d:true,m:'Gereed'},
+      {t:'Vergadering ploegcommandanten',d:false,m:'14:00 – Instructieruimte A'},
+      {t:'Verlenging certificering HV-voertuig',d:false,m:'Deadline: 31 mrt 2026'},
+    ]},
+    render(d,wid){return d.items.map((item,i)=>`
+      <div class="trow">
+        <input type="checkbox" class="tcb" ${item.d?'checked':''} onchange="toggleTask(${wid},${i},this.checked)">
+        <div class="tc"><div class="tlabel">${esc(item.t)}</div>${item.m?`<div class="tmeta">${esc(item.m)}</div>`:''}</div>
+      </div>`).join('');},
+    editForm(d){return`<label class="flbl">Taken (één per regel)</label>
+      <textarea class="fta" id="f0" style="min-height:140px">${d.items.map(i=>(i.d?'[x] ':'[ ] ')+i.t+(i.m?' | '+i.m:'')).join('\n')}</textarea>
+      <div class="fhint">Formaat: <code>[ ] Taak | Notitie</code> &nbsp; Afgevinkt: <code>[x] Taak</code></div>`;},
+    parseForm(){const ls=document.getElementById('f0').value.split('\n').filter(l=>l.trim());
+      return{items:ls.map(l=>{const d=l.startsWith('[x]');const r=l.replace(/^\[.\]\s*/,'');const[t,m]=r.split('|').map(s=>s.trim());return{t,m:m||'',d};})};},
+  },
+  weather:{label:'Actueel Weer',ico:'cloud',
+    def:{loc:'TRAMSINGEL 71, BREDA',temp:'11',desc:'Gedeeltelijk bewolkt',wind:'18 km/h ZW',hum:'74%',pres:'1018 hPa',vis:'12 km'},
+    render(d){return`
+      <div style="text-align:center;padding:8px 0 14px">
+        <div style="font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--red);margin-bottom:10px">${esc(d.loc)}</div>
+        <div style="font-size:52px;font-weight:900;color:var(--text);line-height:1.05">${esc(d.temp)}°C</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-sub);margin-top:7px">${esc(d.desc)}</div>
+      </div>
+      <div class="sgrid">
+        <div class="scell"><div class="sl">Wind</div><div class="sv">${esc(d.wind)}</div></div>
+        <div class="scell"><div class="sl">Vochtigheid</div><div class="sv">${esc(d.hum)}</div></div>
+        <div class="scell"><div class="sl">Luchtdruk</div><div class="sv">${esc(d.pres)}</div></div>
+        <div class="scell"><div class="sl">Zichtbaarheid</div><div class="sv">${esc(d.vis)}</div></div>
+      </div>`;},
+    editForm(d){return`
+      <label class="flbl">Locatienaam</label><input class="finp" id="f0" value="${esc(d.loc)}">
+      <label class="flbl">Temperatuur (°C)</label><input class="finp" id="f1" value="${esc(d.temp)}">
+      <label class="flbl">Beschrijving</label><input class="finp" id="f2" value="${esc(d.desc)}">
+      <label class="flbl">Wind</label><input class="finp" id="f3" value="${esc(d.wind)}">
+      <label class="flbl">Luchtvochtigheid</label><input class="finp" id="f4" value="${esc(d.hum)}">
+      <label class="flbl">Luchtdruk</label><input class="finp" id="f5" value="${esc(d.pres)}">
+      <label class="flbl">Zichtbaarheid</label><input class="finp" id="f6" value="${esc(d.vis)}">`;},
+    parseForm(){return{loc:document.getElementById('f0').value,temp:document.getElementById('f1').value,desc:document.getElementById('f2').value,wind:document.getElementById('f3').value,hum:document.getElementById('f4').value,pres:document.getElementById('f5').value,vis:document.getElementById('f6').value};},
+  },
+  voertuigen:{label:'Status Voertuigen',ico:'truck',
+    def:{vehicles:[
+      {cs:'TS-31',type:'Tankautospuit',s:'ok'},
+      {cs:'HV-31',type:'Hulpverlening',s:'warn'},
+      {cs:'LB-31',type:'Ladderwagen',s:'ok'},
+      {cs:'WTW-31',type:'Waterongevallenvoertuig',s:'ok'},
+      {cs:'TS-32',type:'Tankautospuit',s:'err'},
+    ]},
+    render(d){const L={ok:'Operationeel',warn:'Onderhoud',err:'Uitruk'};const C={ok:'green',warn:'gold',err:'red'};
+      return`<table class="wtbl"><thead><tr><th>Callsign</th><th>Type</th><th>Status</th></tr></thead><tbody>${
+        d.vehicles.map(v=>`<tr><td style="font-weight:800">${esc(v.cs)}</td><td style="color:var(--text-sub);font-size:12px">${esc(v.type)}</td><td><span class="pill ${C[v.s]||'grey'}">${L[v.s]||v.s}</span></td></tr>`).join('')
+      }</tbody></table>`;},
+    editForm(d){return`<label class="flbl">Voertuigen (één per regel)</label>
+      <textarea class="fta" id="f0" style="min-height:130px">${d.vehicles.map(v=>`${v.cs} | ${v.type} | ${v.s}`).join('\n')}</textarea>
+      <div class="fhint">Formaat: <code>Callsign | Type | ok / warn / err</code></div>`;},
+    parseForm(){const ls=document.getElementById('f0').value.split('\n').filter(l=>l.trim());
+      return{vehicles:ls.map(l=>{const[cs,type,s]=l.split('|').map(x=>x.trim());return{cs,type,s};})};},
+  },
+  reserveringen:{label:'Reserveringen Topdesk',ico:'cal',
+    def:{items:[
+      {time:'09:00',loc:'Instructieruimte A',desc:'Ploegvergadering'},
+      {time:'11:30',loc:'Oefenhal',desc:'Technische oefening HV'},
+      {time:'14:00',loc:'Kantine',desc:'Werkoverleg logistiek'},
+      {time:'19:00',loc:'Kantine',desc:'Afscheid collega J. Vermeulen'},
+    ]},
+    render(d){return d.items.map(r=>`
+      <div class="acc blue" style="display:flex;gap:11px;align-items:flex-start">
+        <div style="font-size:16px;font-weight:900;color:var(--navy);min-width:44px;flex-shrink:0">${esc(r.time)}</div>
+        <div><div style="font-size:13px;font-weight:700;color:var(--text)">${esc(r.desc)}</div><div style="font-size:11px;color:var(--text-sub);margin-top:2px">${esc(r.loc)}</div></div>
+      </div>`).join('');},
+    editForm(d){return`<label class="flbl">Reserveringen (één per regel)</label>
+      <textarea class="fta" id="f0" style="min-height:110px">${d.items.map(r=>`${r.time} | ${r.loc} | ${r.desc}`).join('\n')}</textarea>
+      <div class="fhint">Formaat: <code>HH:MM | Locatie | Omschrijving</code></div>`;},
+    parseForm(){const ls=document.getElementById('f0').value.split('\n').filter(l=>l.trim());
+      return{items:ls.map(l=>{const[time,loc,desc]=l.split('|').map(s=>s.trim());return{time,loc,desc};})};},
+  },
+  ploegindeling:{label:'Ploegindeling',ico:'users',
+    def:{ploeg:'B-Ploeg',members:[
+      {rank:'PC',name:'L. van den Berg',role:'Ploegcommandant'},
+      {rank:'OPC',name:'M. Jansen',role:'Ondersteuning'},
+      {rank:'HB',name:'A. de Vries',role:'Chauffeur TS-31'},
+      {rank:'HB',name:'K. Peeters',role:'Manschap TS-31'},
+      {rank:'HB',name:'S. Oosterbeek',role:'Chauffeur HV-31'},
+      {rank:'MN',name:'T. Brouwers',role:'Manschap HV-31'},
+      {rank:'MN',name:'F. Willems',role:'Manschap TS-31'},
+    ]},
+    render(d){return`
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-sub);margin-bottom:10px">${esc(d.ploeg)}</div>
+      <table class="wtbl"><thead><tr><th>Rang</th><th>Naam</th><th>Functie</th></tr></thead><tbody>${
+        d.members.map(m=>`<tr><td><span class="pill blue">${esc(m.rank)}</span></td><td style="font-weight:700">${esc(m.name)}</td><td style="color:var(--text-sub);font-size:12px">${esc(m.role)}</td></tr>`).join('')
+      }</tbody></table>`;},
+    editForm(d){return`
+      <label class="flbl">Ploegnaam</label><input class="finp" id="f0" value="${esc(d.ploeg)}">
+      <label class="flbl">Leden (één per regel)</label>
+      <textarea class="fta" id="f1" style="min-height:130px">${d.members.map(m=>`${m.rank} | ${m.name} | ${m.role}`).join('\n')}</textarea>
+      <div class="fhint">Formaat: <code>Rang | Naam | Functie</code></div>`;},
+    parseForm(){const ls=document.getElementById('f1').value.split('\n').filter(l=>l.trim());
+      return{ploeg:document.getElementById('f0').value,members:ls.map(l=>{const[rank,name,role]=l.split('|').map(s=>s.trim());return{rank,name,role};})};},
+  },
+  wegafsluiting:{label:'Wegafsluitingen',ico:'road',
+    def:{items:[
+      {weg:'Ploegstraat Breda',status:'AFGESLOTEN',date:'Wo, 11 maart 2026 (Fase 1 t/m 5)',desc:'Herinrichting / onderhoud van Weg',warn:'Geen doorgang mogelijk.'},
+      {weg:'A58 richting Breda – km 14',status:'BEPERKT',date:'Ma, 16 maart 2026',desc:'Wegwerkzaamheden rijstrook 1+2, omleiding via N282',warn:''},
+    ]},
+    render(d){return d.items.map(w=>`
+      <div style="border:1px solid var(--card-border);border-radius:10px;overflow:hidden;margin-bottom:10px">
+        <div style="background:var(--input-bg);height:56px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--card-border)">
+          <span style="font-size:12px;font-weight:600;color:var(--text-light)">Kaart niet beschikbaar</span>
         </div>
+        <div style="padding:10px 12px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px">
+            <span style="font-size:13px;font-weight:700">${esc(w.weg)}</span>
+            <span class="pill ${w.status==='AFGESLOTEN'?'red':'gold'}">${esc(w.status)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-sub);margin-bottom:4px">&#128197; ${esc(w.date)}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text)">${esc(w.desc)}</div>
+          ${w.warn?`<div class="warnrow">${esc(w.warn)}</div>`:''}
+        </div>
+      </div>`).join('');},
+    editForm(d){return`<label class="flbl">Wegafsluitingen (gescheiden door ---)</label>
+      <textarea class="fta" id="f0" style="min-height:150px">${d.items.map(w=>`${w.weg} | ${w.status} | ${w.date}\n${w.desc}\n${w.warn||''}`).join('\n---\n')}</textarea>
+      <div class="fhint">Regel 1: <code>Wegnaam | AFGESLOTEN of BEPERKT | Datum</code><br>Regel 2: Omschrijving<br>Regel 3: Waarschuwing (optioneel)</div>`;},
+    parseForm(){const bs=document.getElementById('f0').value.split('---').map(b=>b.trim()).filter(Boolean);
+      return{items:bs.map(b=>{const lns=b.split('\n');const[weg,status,date]=lns[0].split('|').map(s=>s.trim());return{weg,status,date,desc:(lns[1]||'').trim(),warn:(lns[2]||'').trim()};})};},
+  },
+  topdesk:{label:'Topdesk Meldingen',ico:'ticket',
+    def:{items:[
+      {num:'M2603 156',title:'Verstopping',loc:'BREDA',status:'AFGEHANDELD',date:'Di, 3 mrt 2026',dl:'04/03',person:'Meijers, Dennis'},
+      {num:'M2603 073',title:'Hybride schermen storing 1.77',loc:'INSTRUCTIERUIMTE',status:'AFGEHANDELD',date:'Ma, 2 mrt 2026',dl:'03/03',person:'Hoekstra, Joost'},
+      {num:'I-2026-4775',title:'SCBA set nr. 7 – lekkage detector',loc:'',status:'OPEN',date:'Wo, 18 mrt 2026',dl:'19/03',person:'Van den Berg, L.'},
+      {num:'I-2026-4821',title:'Laadpaal voertuig HV-31 defect',loc:'',status:'IN BEHANDELING',date:'Di, 17 mrt 2026',dl:'20/03',person:'Jansen, M.'},
+    ]},
+    render(d){const SC={AFGEHANDELD:'green',OPEN:'red','IN BEHANDELING':'gold'};
+      return d.items.map(t=>`
+        <div class="acc" style="margin-bottom:9px">
+          <div class="irow">
+            <div class="irow-l">
+              <span style="font-size:13px;font-weight:700">${esc(t.title)}</span>
+              ${t.loc?`<span class="pill blue">${esc(t.loc)}</span>`:''}
+            </div>
+            <span class="pill ${SC[t.status]||'grey'}">${esc(t.status)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--text-sub)">${esc(t.num)} &bull; Aangemaakt: ${esc(t.date)} &bull; Streefdatum: ${esc(t.dl)}</div>
+          <div style="font-size:11px;color:var(--text-sub);text-align:right;margin-top:1px">${esc(t.person)}</div>
+        </div>`).join('');},
+    editForm(d){return`<label class="flbl">Meldingen (gescheiden door ---)</label>
+      <textarea class="fta" id="f0" style="min-height:170px">${d.items.map(t=>`${t.num} | ${t.title} | ${t.loc} | ${t.status} | ${t.date} | ${t.dl} | ${t.person}`).join('\n---\n')}</textarea>
+      <div class="fhint">Formaat: <code>Nummer | Titel | Locatie | Status | Datum | Streefdatum | Persoon</code><br>Status: <code>AFGEHANDELD / OPEN / IN BEHANDELING</code></div>`;},
+    parseForm(){const ls=document.getElementById('f0').value.split('---').map(b=>b.trim()).filter(Boolean);
+      return{items:ls.map(l=>{const[num,title,loc,status,date,dl,person]=l.split('|').map(s=>s.trim());return{num,title,loc,status,date,dl,person};})};},
+  },
+  p2000:{label:'P2000 Incidenten',ico:'bell',
+    def:{items:[
+      {time:'11:34',prio:'p1',msg:'BRAND Middelbrand industrieel gebouw\nIndustriestraat 14, Tilburg',units:'TS31 HV31 LB31 OVD'},
+      {time:'10:58',prio:'p2',msg:'VRK Verkeersongeval met beknelling\nA58 km 14.2 richting Breda',units:'HV31 TS32 OVD'},
+      {time:'09:45',prio:'p3',msg:'BUI Buitensluiting woning\nKanaalstraat 88, Tilburg',units:'TS31'},
+      {time:'09:12',prio:'p2',msg:'GASL Gaslek aanrijding\nSpoorlaan 142, Tilburg',units:'TS31 TS32'},
+    ]},
+    render(d){const PC={p1:'red',p2:'gold',p3:'green'};const PL={p1:'PRIO 1',p2:'PRIO 2',p3:'PRIO 3'};const BC={p1:'var(--red)',p2:'var(--gold)',p3:'#16a34a'};
+      return d.items.map(i=>`
+        <div style="border-left:3px solid ${BC[i.prio]||'var(--red)'};background:var(--input-bg);border-radius:0 8px 8px 0;padding:9px 11px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+            <span class="pill ${PC[i.prio]||'grey'}">${PL[i.prio]||'?'}</span>
+            <span style="font-size:11px;font-weight:700;color:var(--text-sub)">${esc(i.time)}</span>
+          </div>
+          <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.5">${esc(i.msg).replace(/\n/g,'<br>')}</div>
+          ${i.units?`<div style="font-size:11px;font-weight:800;color:var(--navy);margin-top:5px">${esc(i.units)}</div>`:''}
+        </div>`).join('');},
+    editForm(d){return`<label class="flbl">Meldingen (gescheiden door ---)</label>
+      <textarea class="fta" id="f0" style="min-height:170px">${d.items.map(i=>`${i.time} | ${i.prio} | ${i.units}\n${i.msg}`).join('\n---\n')}</textarea>
+      <div class="fhint">Regel 1: <code>HH:MM | p1 / p2 / p3 | Eenheden</code><br>Dan meldingstekst. Blokken scheiden met <code>---</code></div>`;},
+    parseForm(){const bs=document.getElementById('f0').value.split('---').map(b=>b.trim()).filter(Boolean);
+      return{items:bs.map(b=>{const[fl,...rest]=b.split('\n');const[time,prio,units]=fl.split('|').map(s=>s.trim());return{time,prio,units,msg:rest.join('\n').trim()};})};},
+  },
+};
 
-        <form id="projectForm">
-            <div class="form-group">
-                <label for="projectName">Project Name *</label>
-                <input type="text" id="projectName" name="projectName" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="creators">Creators (comma separated) *</label>
-                <input type="text" id="creators" name="creators" placeholder="Ava Janssen, Rik de Boer" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="description">Description *</label>
-                <textarea id="description" name="description" rows="4" required></textarea>
-            </div>
-            
-            <div class="form-group">
-                <label for="tags">Tags (comma separated) *</label>
-                <input type="text" id="tags" name="tags" placeholder="Tech, interaction, sensors" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="category">Category *</label>
-                <select id="category" name="category" required>
-                    <option value="">Select a category</option>
-                    <option value="Human">Human</option>
-                    <option value="Void">Void</option>
-                    <option value="Tech">Tech</option>
-                    <option value="Story">Story</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="year">Year *</label>
-                <input type="date" id="year" name="year" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="imageFile">Project Thumbnail *</label>
-                <input type="file" id="imageFile" name="imageFile" accept="image/png, image/jpeg, image/jpg" required>
-                <small>PNG or JPG, max 2MB</small>
-            </div>
-            
-            <button type="submit" id="submitBtn">Create Project</button>
-        </form>
-        
-        <div id="message" class="message"></div>
+// ── STATE ──
+let widgets=[],nextId=1,editMode=false,curEdit=null,grid=null;
+
+const DEFAULT=[
+  {type:'topdesk',      x:0,  y:0, w:4, h:4},
+  {type:'voertuigen',   x:4,  y:0, w:4, h:4},
+  {type:'wegafsluiting',x:8,  y:0, w:2, h:4},
+  {type:'p2000',        x:10, y:0, w:2, h:8},
+  {type:'weather',      x:0,  y:4, w:2, h:4},
+  {type:'werkzaamheden',x:2,  y:4, w:2, h:4},
+  {type:'ploegindeling',x:4,  y:4, w:4, h:4},
+  {type:'reserveringen',x:8,  y:4, w:2, h:4},
+];
+
+// ── CLOCK ──
+const DAYS=['Zo','Ma','Di','Wo','Do','Vr','Za'];
+const MONTHS=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+function tick(){
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  const dateStr=`${DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  const timeStr=`${p(d.getHours())}:${p(d.getMinutes())}`;
+  document.getElementById('bbdatetime').textContent=`${dateStr}\u00a0\u00a0\u00a0\u00a0${timeStr}`;
+}
+setInterval(tick,1000);tick();
+
+
+// ── EDIT MODE ──
+function toggleEditMode(){
+  editMode=!editMode;
+  document.body.classList.toggle('edit-mode',editMode);
+  const b=document.getElementById('editbtn');
+  b.classList.toggle('active',editMode);
+  b.textContent=editMode?'Klaar':'Edit Mode';
+  document.getElementById('layout-lbl').innerHTML=editMode?'Layout: <strong>Bewerken</strong>':'Layout: <strong>Vergrendeld</strong>';
+  if(grid)grid.setStatic(!editMode);
+  if(editMode)showToast('Bewerkmodus actief – sleep en resize widgets');
+}
+
+// ── MODALS / TOAST ──
+function openModal(id){document.getElementById(id).classList.add('open');if(id==='add-modal')buildPicker();}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300);}
+
+// ── WIDGET HTML ──
+function widgetHTML(w){
+  const def=T[w.type];
+  return`<div class="widget" id="w${w.id}" data-id="${w.id}">
+    <div class="wh">
+      <div class="wh-title">${def.label}</div>
+      <div class="wh-acts">
+        <button class="wb edit-btn" onclick="openEditWid(${w.id})" title="Bewerken">${I.pencil}</button>
+        <button class="wb del" onclick="removeWidget(${w.id})" title="Verwijderen">${I.x}</button>
+      </div>
     </div>
-    <script>
-        class ProjectSubmitter {
-            constructor() {
-                this.form = document.getElementById('projectForm');
-                this.messageEl = document.getElementById('message');
-                this.submitBtn = document.getElementById('submitBtn');
-                
-                // Hardcoded fine-grained personal access token for testing
-                this.githubToken = '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';
-                
-                this.form.addEventListener('submit', (e) => this.handleSubmit(e));
-            }
+    <div class="wbody" id="wb${w.id}">${def.render(w.data,w.id)}</div>
+  </div>`;
+}
 
-            async handleSubmit(e) {
-                e.preventDefault();
-                this.setMessage('', '');
-                this.setLoading(true);
+// ── RENDER ──
+function renderWidget(w){
+  grid.addWidget({
+    id:'gs'+w.id,
+    x:w.x, y:w.y, w:w.w, h:w.h,
+    minW:2, minH:2,
+    content: widgetHTML(w)
+  });
+}
 
-                try {
-                    const formData = new FormData(this.form);
-                    const projectData = this.processFormData(formData);
+function refreshWidget(id){
+  const w=widgets.find(x=>x.id===id);
+  if(!w)return;
+  document.getElementById(`wb${id}`).innerHTML=T[w.type].render(w.data,id);
+}
 
-                    // Use hardcoded token
-                    const githubToken = this.githubToken;
-                    
-                    // First test the token
-                    await this.testGitHubToken(githubToken);
-                    
-                    // Then create the project
-                    await this.createProjectOnGitHub({ ...projectData, githubToken });
-                    this.setMessage('Project created successfully!', 'success');
-                    this.form.reset();
-                } catch (error) {
-                    this.setMessage(`Error: ${error.message}`, 'error');
-                    console.error('Submission error:', error);
-                } finally {
-                    this.setLoading(false);
-                }
-            }
+function removeWidget(id){
+  const el=document.querySelector(`.grid-stack-item[gs-id="gs${id}"]`);
+  if(el)grid.removeWidget(el);
+  widgets=widgets.filter(w=>w.id!==id);
+  saveState();
+}
 
-            processFormData(formData) {
-                const creators = formData.get('creators').split(',').map(name => name.trim());
-                const tags = formData.get('tags').split(',').map(tag => tag.trim());
-                
-                return {
-                    projectName: formData.get('projectName'),
-                    creators: creators,
-                    description: formData.get('description'),
-                    tags: tags,
-                    category: formData.get('category'),
-                    year: formData.get('year'),
-                    imageFile: formData.get('imageFile')
-                };
-            }
+function toggleTask(wid,idx,checked){
+  const w=widgets.find(x=>x.id==wid);
+  if(w&&w.data.items[idx]!==undefined){w.data.items[idx].d=checked;saveState();}
+}
 
-            async testGitHubToken(token) {
-                try {
-                    const response = await fetch('https://api.github.com/user', {
-                        headers: {
-                            'Authorization': `token ${token}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        if (response.status === 401) {
-                            throw new Error('Token is invalid or expired');
-                        } else if (response.status === 403) {
-                            throw new Error('Token missing required permissions');
-                        } else {
-                            throw new Error(`GitHub API error: ${response.status}`);
-                        }
-                    }
-                    
-                    const userData = await response.json();
-                    console.log('Token works for user:', userData.login);
-                    return true;
-                } catch (error) {
-                    throw new Error(`Token test failed: ${error.message}`);
-                }
-            }
+// ── PICKER ──
+function buildPicker(){
+  const c=document.getElementById('wpgrid');c.innerHTML='';
+  Object.entries(T).forEach(([type,def])=>{
+    const taken=widgets.some(w=>w.type===type);
+    const d=document.createElement('div');
+    d.className='wpick'+(taken?' taken':'');
+    d.innerHTML=`<div class="wpick-ico">${I[def.ico]||''}</div><div class="wpick-name">${def.label}</div>`;
+    if(!taken)d.onclick=()=>addWidget(type);
+    c.appendChild(d);
+  });
+}
 
-            async createProjectOnGitHub(projectData) {
-                const { githubToken, imageFile, ...metadata } = projectData;
-                
-                // Process image file
-                const imageBase64 = await this.fileToBase64(imageFile);
-                
-                // Create metadata with proper structure
-                const metadataContent = {
-                    projectName: metadata.projectName,
-                    creators: metadata.creators,
-                    description: metadata.description,
-                    tags: metadata.tags,
-                    category: metadata.category,
-                    year: metadata.year,
-                    imageFile: "thumbnail.png"
-                };
+function addWidget(type){
+  const w={id:nextId++,type,x:0,y:99,w:4,h:4,data:JSON.parse(JSON.stringify(T[type].def))};
+  widgets.push(w);
+  renderWidget(w);
+  closeModal('add-modal');
+  saveState();
+  showToast(`${T[type].label} toegevoegd`);
+}
 
-                // Sanitize project name for folder
-                const folderName = this.sanitizeFolderName(metadata.projectName);
-                
-                // Create folder and files on GitHub
-                await this.createGitHubFile(
-                    githubToken, 
-                    `${folderName}/metadata.json`,
-                    JSON.stringify(metadataContent, null, 2),
-                    false // not an image
-                );
+// ── EDIT ──
+function openEditWid(id){
+  const w=widgets.find(x=>x.id===id);if(!w)return;
+  curEdit=id;
+  document.getElementById('emh').textContent=`${T[w.type].label} bewerken`;
+  document.getElementById('embody').innerHTML=T[w.type].editForm(w.data);
+  openModal('edit-modal');
+}
 
-                await this.createGitHubFile(
-                    githubToken,
-                    `${folderName}/thumbnail.png`,
-                    imageBase64,
-                    true // is an image
-                );
-            }
+function saveEdit(){
+  const w=widgets.find(x=>x.id===curEdit);if(!w)return;
+  w.data=T[w.type].parseForm();refreshWidget(w.id);closeModal('edit-modal');saveState();showToast('Wijzigingen opgeslagen');
+}
 
-            async createGitHubFile(token, path, content, isImage = false) {
-                try {
-                    let base64Content;
-                    
-                    if (isImage) {
-                        // Remove the data URL prefix for images
-                        base64Content = content.split(',')[1];
-                    } else {
-                        // For text files, use proper base64 encoding
-                        base64Content = btoa(unescape(encodeURIComponent(content)));
-                    }
+// ── PERSIST ──
+// Paste your Firebase Realtime Database URL here to enable cross-device sync.
+// Example: 'https://your-project-default-rtdb.europe-west1.firebasedatabase.app'
+// Leave empty ('') to use localStorage only (single device).
+const FIREBASE_URL = 'https://vrmwb-a9db4-default-rtdb.europe-west1.firebasedatabase.app/';
 
-                    const response = await fetch(
-                        `https://api.github.com/repos/cmdverse/cmdverse/contents/hold/${path}`, 
-                        {
-                            method: 'PUT',
-                            headers: {
-                                'Authorization': `token ${token}`,
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/vnd.github.v3+json'
-                            },
-                            body: JSON.stringify({
-                                message: `Add project: ${path.split('/')[0]}`,
-                                content: base64Content,
-                                branch: 'main'
-                            })
-                        }
-                    );
+function syncPositions(){
+  if(!grid)return;
+  grid.engine.nodes.forEach(node=>{
+    const id=parseInt((node.id||'').replace('gs',''));
+    const w=widgets.find(x=>x.id===id);
+    if(w){w.x=node.x;w.y=node.y;w.w=node.w;w.h=node.h;}
+  });
+}
 
-                    const responseData = await response.json();
-                    
-                    if (!response.ok) {
-                        if (response.status === 401) {
-                            throw new Error('Invalid token - check token permissions');
-                        } else if (response.status === 403) {
-                            throw new Error('Token missing required scopes (need repository access)');
-                        } else if (response.status === 404) {
-                            throw new Error('Repository not found - check repository name');
-                        } else {
-                            throw new Error(`GitHub API error: ${response.status} - ${responseData.message}`);
-                        }
-                    }
+async function saveState(){
+  syncPositions();
+  const payload=JSON.stringify({widgets,nextId});
+  if(FIREBASE_URL){
+    try{
+      await fetch(`${FIREBASE_URL}/state.json`,{method:'PUT',headers:{'Content-Type':'application/json'},body:payload});
+      return;
+    }catch(e){}
+  }
+  try{localStorage.setItem('vrmwb4-w',JSON.stringify(widgets));localStorage.setItem('vrmwb4-id',String(nextId));}catch(e){}
+}
 
-                    return responseData;
-                } catch (error) {
-                    throw new Error(`Network error: ${error.message}`);
-                }
-            }
-
-            fileToBase64(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = () => resolve(reader.result);
-                    reader.onerror = error => reject(error);
-                });
-            }
-
-            sanitizeFolderName(name) {
-                return name
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]/g, '-')
-                    .replace(/-+/g, '-')
-                    .replace(/^-|-$/g, '');
-            }
-
-            setMessage(text, type) {
-                if (!text) {
-                    this.messageEl.style.display = 'none';
-                    return;
-                }
-                
-                this.messageEl.textContent = text;
-                this.messageEl.className = `message ${type}`;
-                this.messageEl.style.display = 'block';
-            }
-
-            setLoading(loading) {
-                this.submitBtn.disabled = loading;
-                this.submitBtn.textContent = loading ? 'Creating Project...' : 'Create Project';
-            }
+async function loadState(){
+  if(FIREBASE_URL){
+    try{
+      const r=await fetch(`${FIREBASE_URL}/state.json`);
+      if(r.ok){
+        const s=await r.json();
+        if(s&&s.widgets&&s.widgets.length){
+          widgets=s.widgets;nextId=s.nextId||widgets.length+1;
+          widgets.forEach(w=>renderWidget(w));
+          return true;
         }
+      }
+    }catch(e){}
+    return false;
+  }
+  try{
+    const s=localStorage.getItem('vrmwb4-w');const sid=localStorage.getItem('vrmwb4-id');
+    if(s){
+      widgets=JSON.parse(s);nextId=parseInt(sid)||widgets.length+1;
+      widgets.forEach(w=>renderWidget(w));
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
 
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            new ProjectSubmitter();
-        });
-    </script>
+// ── INIT ──
+async function init(){
+  const canvas=document.getElementById('canvas');
+  const totalRows=8;
+  const margin=10;
+  const cellH=Math.max(60,Math.floor((canvas.clientHeight-margin*(totalRows+1))/totalRows));
+
+  grid=GridStack.init({
+    el:'#grid',
+    cellHeight:cellH,
+    margin:margin,
+    column:12,
+    staticGrid:true,
+    animate:true,
+    minRow:totalRows,
+    draggable:{handle:'.wh'},
+    resizable:{handles:'se'}
+  });
+
+  grid.on('change',saveState);
+
+  const loaded=await loadState();
+  if(!loaded){
+    DEFAULT.forEach(d=>{
+      const w={id:nextId++,type:d.type,x:d.x,y:d.y,w:d.w,h:d.h,data:JSON.parse(JSON.stringify(T[d.type].def))};
+      widgets.push(w);renderWidget(w);
+    });
+    saveState();
+  }
+}
+
+document.querySelectorAll('.mov').forEach(m=>m.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+window.addEventListener('load',init);
+</script>
 </body>
 </html>
